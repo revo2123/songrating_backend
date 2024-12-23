@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import express, { Express, Request, Response, Application } from "express";
+import express, { Request, Response, Application } from "express";
 
 dotenv.config();
 
@@ -9,8 +9,8 @@ const port = process.env.PORT || 8000;
 const mysql = require("mysql2");
 const db = mysql.createConnection({
     host: "localhost",
-    user: "workbench",
-    password: "workbench",
+    user: process.env.MYSQL_CRUD_USER,
+    password: process.env.MYSQL_CRUD_USER_PW,
     database: "songrating"
 });
 db.connect();
