@@ -69,7 +69,7 @@ router.post("/login", async (req, res: any) => {
  * @returns auth-token
  */
 function generateAuthToken(user: {id: number, name: string, password: string}): string {
-    return jwt.sign({id: user.id}, process.env.JWT_PRIVATE_KEY as any, {expiresIn: process.env.JWT_EXPIRY});
+    return jwt.sign({id: user.id}, process.env.JWT_PRIVATE_KEY as any, {expiresIn: process.env.JWT_EXPIRY as any});
 }
 
 export default router;
