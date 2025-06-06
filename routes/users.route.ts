@@ -1,23 +1,25 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import bcrypt from "bcrypt";
-import auth from "../middleware/auth"
+import auth from "../middleware/auth";
 import jwt from "jsonwebtoken";
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // get user by token
-router.get("/get", auth as any, async (req, res: any) => {
+router.get("/get/:id", auth as any, async (req, res: any) => {
+    // get specific user by id
     const user = await prisma.user.findUnique({
         where: {
-            id: req.body.user.id
+            id: +req.params.id
         }
     });
     if (!user) return res.status(401).send("Access denied.");
+    // return found user
     res.send({
-        id: user?.id,
-        name: user?.name
+        id: user.id,
+        name: user.name
     })
 });
 

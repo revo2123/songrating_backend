@@ -1,7 +1,11 @@
 import dotenv from "dotenv";
 import express, { Application } from "express";
 import { PrismaClient } from "@prisma/client";
+
 import usersRoute from "./routes/users.route"
+import songsRoute from "./routes/songs.route";
+import artistsRoute from "./routes/artists.route";
+import ratingsRoute from "./routes/ratings.route";
 
 dotenv.config();
 
@@ -20,6 +24,9 @@ if (!process.env.JWT_PRIVATE_KEY) {
 // add router
 app.use(express.json());
 app.use("/api/users", usersRoute);
+app.use("/api/songs", songsRoute);
+app.use("/api/artists", artistsRoute);
+app.use("/api/ratings", ratingsRoute);
 
 // setup express-server on port
 app.listen(port, () => {

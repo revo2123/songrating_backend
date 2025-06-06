@@ -8,20 +8,33 @@ generator client {
 }
 
 model Song {
-  id      Int    @id @default(autoincrement())
-  title   String @db.VarChar(50)
-  link    String @db.VarChar(100)
+  id      Int      @id @default(autoincrement())
+  title   String   @db.VarChar(50)
+  link    String   @db.VarChar(100)
   artists Artist[]
+  Rating  Rating[]
 }
 
 model Artist {
-  id     Int    @id @default(autoincrement())
-  name  String @db.VarChar(50)
+  id    Int    @id @default(autoincrement())
+  name  String @unique @db.VarChar(50)
   songs Song[]
 }
 
+model Rating {
+  id     Int  @id @default(autoincrement())
+  value  Int  @db.TinyInt
+  songId Int
+  song   Song @relation(fields: [songId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@unique([songId, userId])
+}
+
 model User {
-  id  Int @id @default(autoincrement())
-  name String  @db.VarChar(255) @unique
-  password String @db.VarChar(255)
+  id       Int      @id @default(autoincrement())
+  name     String   @unique @db.VarChar(255)
+  password String   @db.VarChar(255)
+  Rating   Rating[]
 }
