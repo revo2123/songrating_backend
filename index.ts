@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import express, { Application } from "express";
+import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 
 import usersRoute from "./routes/users.route"
@@ -20,6 +21,8 @@ if (!process.env.JWT_PRIVATE_KEY) {
     console.log("No JWT_PRIVATE_KEY found.");
     process.exit(1);
 }
+
+app.use(cors());
 
 // add router
 app.use(express.json());

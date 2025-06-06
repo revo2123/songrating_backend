@@ -12,7 +12,7 @@ model Song {
   title   String   @db.VarChar(50)
   link    String   @db.VarChar(100)
   artists Artist[]
-  Rating  Rating[]
+  rating  Rating[]
 }
 
 model Artist {
@@ -36,5 +36,5 @@ model User {
   id       Int      @id @default(autoincrement())
   name     String   @unique @db.VarChar(255)
   password String   @db.VarChar(255)
-  Rating   Rating[]
+  rating   Rating[]
 }
