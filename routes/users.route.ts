@@ -59,6 +59,7 @@ router.post("/login", async (req, res: any) => {
     // check if password is correct
     if (!(await bcrypt.compare(req.body.password, user.password))) return res.status(401).send("Access denied.");
     // return auth-token and user
+    res.header("Access-Control-Expose-Headers", "x-auth-token");
     res.header("x-auth-token", generateAuthToken(user)).send({
         id: user.id,
         name: user.name
