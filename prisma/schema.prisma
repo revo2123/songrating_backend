@@ -18,6 +18,7 @@ model Song {
 model Artist {
   id    Int    @id @default(autoincrement())
   name  String @unique @db.VarChar(50)
+  link  String @db.VarChar(100)
   songs Song[]
 }
 
