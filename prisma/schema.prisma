@@ -12,7 +12,7 @@ model Song {
   title   String   @db.VarChar(50)
   link    String   @db.VarChar(100)
   artists Artist[]
-  rating  Rating[]
+  ratings  Rating[]
 }
 
 model Artist {

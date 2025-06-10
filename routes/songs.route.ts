@@ -10,6 +10,10 @@ router.get("/get/:id", auth as any, async (req, res: any) => {
     const song = await prisma.song.findUnique({
         where: {
             id: +req.params.id
+        },
+        include: {
+            artists: true,
+            ratings: true
         }
     });
     if (!song) return res.status(404).send("Song not found.");
