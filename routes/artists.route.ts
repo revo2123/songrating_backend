@@ -10,6 +10,9 @@ router.get("/get/:id", auth as any, async (req, res: any) => {
     const artist = await prisma.artist.findUnique({
         where: {
             id: +req.params.id
+        },
+        include: {
+            songs: true
         }
     });
     if (!artist) return res.status(404).send("Artist not found.");
@@ -21,7 +24,7 @@ router.get("/get/:id", auth as any, async (req, res: any) => {
 router.get("/getAll", auth as any, async (req, res) => {
     const artists = await prisma.artist.findMany({
         include: {
-            songs: true
+            songs: req.query.omitSongs === "true" ? false : true
         }
     });
     // return found artists
@@ -40,7 +43,8 @@ router.post("/add", auth as any, async (req, res: any) => {
     // create artist, if it does not yet exist
     artist = await prisma.artist.create({
         data: {
-            name: req.body.name
+            name: req.body.name,
+            link: req.body.link
         }
     });
     // return created artist
@@ -54,7 +58,8 @@ router.put("/update/:id", auth as any, async (req, res: any) => {
             id: +req.params.id
         },
         data: {
-            name: req.body.name
+            name: req.body.name,
+            link: req.body.link
         }
     });
     if (!artist) return res.status(404).send("Artist not found.");

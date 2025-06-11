@@ -10,7 +10,7 @@ generator client {
 model Song {
   id      Int      @id @default(autoincrement())
   title   String   @db.VarChar(50)
-  link    String   @db.VarChar(100)
+  link    String?   @db.VarChar(100)
   artists Artist[]
   ratings  Rating[]
 }
@@ -18,7 +18,7 @@ model Song {
 model Artist {
   id    Int    @id @default(autoincrement())
   name  String @unique @db.VarChar(50)
-  link  String @db.VarChar(100)
+  link  String? @db.VarChar(100)
   songs Song[]
 }
 
