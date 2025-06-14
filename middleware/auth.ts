@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
-export default function(req: Request, res: Response, next: NextFunction) {
+export default function(req: Request, res: Response, next: NextFunction): void|any {
     // get token from header, if present
     const token = req.get("x-access-token");
     // if no token is set, dont go on

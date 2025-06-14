@@ -6,7 +6,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 // get specific rating by id
-router.get("/get/:id", auth as any, async (req, res: any) => {
+router.get("/get/:id", auth, async (req, res: any) => {
     const rating = await prisma.rating.findUnique({
         where: {
             id: +req.params.id
@@ -25,8 +25,25 @@ router.get("/get/:id", auth as any, async (req, res: any) => {
     res.send(rating);
 });
 
+// get specific rating by song
+router.get("/getBySong/:id", auth, async (req, res: any) => {
+    const ratings = await prisma.rating.findMany({
+        where: {
+            songId: +req.params.id
+        },
+        omit: {
+            userId: true,
+            songId: true,
+            id: true
+        }
+    });
+    const ratingArr = ratings.map((rating) => rating.value);
+    // return found ratings
+    res.send(ratingArr);
+});
+
 // add rating with value, song and user
-router.post("/add", auth as any, async (req, res) => {
+router.post("/add", auth, async (req, res) => {
     const rating = await prisma.rating.create({
         data: {
             value: req.body.value,
@@ -34,7 +51,7 @@ router.post("/add", auth as any, async (req, res) => {
                 connect: { id: req.body.songId }
             },
             user: {
-                connect: { id: req.body.userId }
+                connect: { id: req.body.user.id }
             }
         },
         include: {

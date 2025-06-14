@@ -6,7 +6,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 // get specific artist by id
-router.get("/get/:id", auth as any, async (req, res: any) => {
+router.get("/get/:id", auth, async (req, res: any) => {
     const artist = await prisma.artist.findUnique({
         where: {
             id: +req.params.id
@@ -21,18 +21,19 @@ router.get("/get/:id", auth as any, async (req, res: any) => {
 });
 
 // get all artists
-router.get("/getAll", auth as any, async (req, res) => {
+router.get("/getAll", auth, async (req, res) => {
     const artists = await prisma.artist.findMany({
         include: {
             songs: req.query.omitSongs === "true" ? false : true
-        }
+        },
+        take: req.query.limit ? +req.query.limit : 24
     });
     // return found artists
     res.send(artists);
 });
 
 // add artists with name
-router.post("/add", auth as any, async (req, res: any) => {
+router.post("/add", auth, async (req, res: any) => {
     // check if artist already exists
     let artist = await prisma.artist.findUnique({
         where: {
@@ -52,7 +53,7 @@ router.post("/add", auth as any, async (req, res: any) => {
 });
 
 // update artist by id
-router.put("/update/:id", auth as any, async (req, res: any) => {
+router.put("/update/:id", auth, async (req, res: any) => {
     const artist = await prisma.artist.update({
         where: {
             id: +req.params.id
