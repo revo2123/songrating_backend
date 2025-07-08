@@ -13,7 +13,11 @@ router.get("/get/:id", auth, async (req, res: any) => {
         },
         include: {
             user: true,
-            song: true
+            song: {
+                include: {
+                    artists: true 
+                }
+            }
         },
         omit: {
             userId: true,
@@ -23,6 +27,24 @@ router.get("/get/:id", auth, async (req, res: any) => {
     if (!rating) return res.status(404).send("Rating not found.");
     // return found rating
     res.send(rating);
+});
+
+// get all ratings
+router.get("/getAll", auth, async (req, res) => {
+    const ratings = await prisma.rating.findMany({
+        where: {
+            userId: req.body.user.id
+        },
+        include: {
+            song: true
+        },
+        omit: {
+            userId: true,
+            songId: true
+        }
+    });
+    // return found ratings
+    res.send(ratings);
 });
 
 // get specific rating by song

@@ -8,7 +8,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 // get user by token
-router.get("/get/:id", auth as any, async (req, res: any) => {
+router.get("/get/:id", auth, async (req, res: any) => {
     // get specific user by id
     const user = await prisma.user.findUnique({
         where: {
@@ -40,6 +40,7 @@ router.post("/add", async (req, res: any) => {
         }
     });
     // return auth-token and user
+    res.header("Access-Control-Expose-Headers", "x-auth-token");
     res.header("x-auth-token", generateAuthToken(user)).send({
         id: user.id,
         name: user.name
