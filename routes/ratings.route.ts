@@ -41,7 +41,8 @@ router.get("/getAll", auth, async (req, res) => {
         omit: {
             userId: true,
             songId: true
-        }
+        },
+        take: req.query.limit ? +req.query.limit : 24
     });
     // return found ratings
     res.send(ratings);
