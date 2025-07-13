@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import auth from "../middleware/auth"
+import axios from "axios";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -46,38 +47,39 @@ router.get("/getAll", auth, async (req, res) => {
     res.send(songs);
 });
 
-// add song with title, link and artist
-router.post("/add", auth, async (req, res) => {
-    const song = await prisma.song.create({
+// add song to the database
+router.post("/add", auth, async (req, res: any) => {
+    // check if the song already exists in the database
+    let song = await prisma.song.findFirst({
+        where: {
+            title: req.body.title
+        }
+    });
+    if (!song) return res.status(401).send("Song already exists.");
+    // if it does not exist, get data from api and add it
+    // TODO: add artist search
+    const apiRes = await axios.get("https://itunes.apple.com/search", {
+        params: {
+            term: "Shape of You",
+            entity: "song",
+            limit: 1
+        }
+    });
+    const apiSong = apiRes.data.results[0];
+    if (apiRes.data.results.length === 0) return res.status(500).send("No Matches.") 
+    // TODO: artists need to be added
+    song = await prisma.song.create({
         data: {
-            title: req.body.title,
-            link: req.body.link,
-            artists: {
-                connect: req.body.artists.map((artistId: number) => ({ id: artistId }))
-            }
+            title: apiSong.trackName,
+            genre: apiSong.primaryGenreName,
+            collection: apiSong.collectionName,
+            coverURL: apiSong.artworkUrl100
         }
     });
     // return created song
     res.send(song);
 });
 
-// update song by id
-router.put("/update/:id", auth, async (req, res: any) => {
-    const song = await prisma.song.update({
-        where: {
-            id: +req.params.id
-        },
-        data: {
-            title: req.body.title,
-            link: req.body.link,
-            artists: {
-                set: req.body.artists.map((artistId: number) => ({ id: artistId }))
-            }
-        }
-    });
-    if (!song) return res.status(404).send("Song not found.");
-    // return updated song
-    res.send(song);
-});
+// TODO: add update functionality
 
 export default router;

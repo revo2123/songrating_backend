@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -8,24 +8,24 @@ generator client {
 }
 
 model Song {
-  id      Int      @id @default(autoincrement())
-  title   String   @db.VarChar(50)
-  link    String?   @db.VarChar(100)
-  artists Artist[]
-  ratings  Rating[]
-  // TODO: should have unique contraint for title and artists
+  id          Int      @id @default(autoincrement())
+  title       String
+  genre       String?
+  collection  String?
+  coverURL    String?
+  artists     Artist[]
+  ratings     Rating[]
 }
 
 model Artist {
   id    Int    @id @default(autoincrement())
-  name  String @unique @db.VarChar(50)
-  link  String? @db.VarChar(100)
+  name  String
   songs Song[]
 }
 
 model Rating {
   id     Int  @id @default(autoincrement())
-  value  Int  @db.TinyInt
+  value  Int  @db.Integer
   songId Int
   song   Song @relation(fields: [songId], references: [id])
   userId Int
@@ -40,3 +40,6 @@ model User {
   password String   @db.VarChar(255)
   rating   Rating[]
 }
+
+// TODO: migrate to postgres
+// TODO: main workflow: get songs and covers from api, once a rating for them exists a song entry is created, if no entry exists go to api

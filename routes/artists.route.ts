@@ -34,18 +34,10 @@ router.get("/getAll", auth, async (req, res) => {
 
 // add artists with name
 router.post("/add", auth, async (req, res: any) => {
-    // check if artist already exists
-    let artist = await prisma.artist.findUnique({
-        where: {
-            name: req.body.name
-        }
-    });
-    if (artist) return res.status(401).send("Artist already exists.");
     // create artist, if it does not yet exist
-    artist = await prisma.artist.create({
+    let artist = await prisma.artist.create({
         data: {
-            name: req.body.name,
-            link: req.body.link
+            name: req.body.name
         }
     });
     // return created artist
@@ -59,8 +51,7 @@ router.put("/update/:id", auth, async (req, res: any) => {
             id: +req.params.id
         },
         data: {
-            name: req.body.name,
-            link: req.body.link
+            name: req.body.name
         }
     });
     if (!artist) return res.status(404).send("Artist not found.");
