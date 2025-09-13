@@ -37,7 +37,10 @@ router.post("/add", auth, async (req, res: any) => {
     // create artist, if it does not yet exist
     let artist = await prisma.artist.create({
         data: {
-            name: req.body.name
+            name: req.body.name,
+            songs: {
+                connect: req.body.songs ? req.body.songs : []
+            }
         }
     });
     // return created artist

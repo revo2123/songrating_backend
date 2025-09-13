@@ -9,10 +9,7 @@ generator client {
 
 model Song {
   id          Int      @id @default(autoincrement())
-  title       String
-  genre       String?
-  collection  String?
-  coverURL    String?
+  title       String  @db.VarChar(255)
   artists     Artist[]
   ratings     Rating[]
 }

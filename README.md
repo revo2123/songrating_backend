@@ -10,3 +10,9 @@ Multi-User application for rating Songs.
 
 ## Startup
 run `npm run dev`
+
+## Libraries
+Using Express.js as Backend Framework with TypeScript.
+Using Bcrypt and Jsonwebtokens for creating AccessTokens for Users.
+Using Prisma as ORM.
+Postgres DB needs to be set up externally.
