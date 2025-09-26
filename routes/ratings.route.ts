@@ -1,12 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import auth from "../middleware/auth";
+import { ExtendError } from "../middleware/error";
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // get specific rating by id
-router.get("/get/:id", auth, async (req, res: any) => {
+router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
     const rating = await prisma.rating.findUnique({
         where: {
             id: +req.params.id
@@ -24,13 +25,16 @@ router.get("/get/:id", auth, async (req, res: any) => {
             songId: true
         }
     });
-    if (!rating) return res.status(404).send("Rating not found.");
+    if (!rating) {
+        next(new ExtendError("Rating not found!", 404));
+        return;
+    }
     // return found rating
     res.send(rating);
 });
 
 // get all ratings
-router.get("/getAll", auth, async (req, res) => {
+router.get("/getAll", auth, async (req: Request, res: Response) => {
     const ratings = await prisma.rating.findMany({
         where: {
             userId: req.body.user.id
@@ -49,7 +53,7 @@ router.get("/getAll", auth, async (req, res) => {
 });
 
 // get specific rating by song
-router.get("/getBySong/:id", auth, async (req, res: any) => {
+router.get("/getBySong/:id", auth, async (req: Request, res: Response) => {
     const ratings = await prisma.rating.findMany({
         where: {
             songId: +req.params.id
@@ -66,7 +70,7 @@ router.get("/getBySong/:id", auth, async (req, res: any) => {
 });
 
 // add rating with value, song and user
-router.post("/add", auth, async (req, res) => {
+router.post("/add", auth, async (req: Request, res: Response) => {
     const rating = await prisma.rating.create({
         data: {
             value: req.body.value,

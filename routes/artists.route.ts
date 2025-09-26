@@ -1,12 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { Router } from "express";
-import auth from "../middleware/auth"
+import { NextFunction, Request, Response, Router } from "express";
+import auth from "../middleware/auth";
+import { ExtendError } from "../middleware/error";
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // get specific artist by id
-router.get("/get/:id", auth, async (req, res: any) => {
+router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
     const artist = await prisma.artist.findUnique({
         where: {
             id: +req.params.id
@@ -15,13 +16,16 @@ router.get("/get/:id", auth, async (req, res: any) => {
             songs: true
         }
     });
-    if (!artist) return res.status(404).send("Artist not found.");
+    if (!artist) {
+        next(new ExtendError("Artist not found!", 404));
+        return;
+    }
     // return found artist
     res.send(artist);
 });
 
 // get all artists
-router.get("/getAll", auth, async (req, res) => {
+router.get("/getAll", auth, async (req: Request, res: Response) => {
     const artists = await prisma.artist.findMany({
         include: {
             songs: req.query.omitSongs === "true" ? false : true
@@ -33,7 +37,7 @@ router.get("/getAll", auth, async (req, res) => {
 });
 
 // add artists with name
-router.post("/add", auth, async (req, res: any) => {
+router.post("/add", auth, async (req: Request, res: Response) => {
     // create artist, if it does not yet exist
     let artist = await prisma.artist.create({
         data: {
@@ -48,7 +52,7 @@ router.post("/add", auth, async (req, res: any) => {
 });
 
 // update artist by id
-router.put("/update/:id", auth, async (req, res: any) => {
+router.put("/update/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
     const artist = await prisma.artist.update({
         where: {
             id: +req.params.id
@@ -57,7 +61,10 @@ router.put("/update/:id", auth, async (req, res: any) => {
             name: req.body.name
         }
     });
-    if (!artist) return res.status(404).send("Artist not found.");
+    if (!artist) {
+        next(new ExtendError("Artist not found!", 404));
+        return;
+    }
     // return updated artist
     res.send(artist);
 });

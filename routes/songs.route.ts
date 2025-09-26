@@ -1,13 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { Router } from "express";
 import auth from "../middleware/auth"
-import axios from "axios";
+import { ExtendError } from "../middleware/error";
+import { NextFunction, Request, Response, Router } from "express";
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // get specific song by id
-router.get("/get/:id", auth, async (req, res: any) => {
+router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
     // get song
     const song = await prisma.song.findUnique({
         where: {
@@ -18,7 +18,10 @@ router.get("/get/:id", auth, async (req, res: any) => {
         }
     });
     // error, if song does not exist
-    if (!song) return res.status(404).send("Song not found.");
+    if (!song) {
+        next(new ExtendError("Song not found!", 404));
+        return;
+    }
     // get avg and count for ratings of song
     const agg = await prisma.rating.aggregate({
         _avg: {
@@ -36,7 +39,7 @@ router.get("/get/:id", auth, async (req, res: any) => {
 });
 
 // get all songs
-router.get("/getAll", auth, async (req, res) => {
+router.get("/getAll", auth, async (req: Request, res: Response) => {
     const songs = await prisma.song.findMany({
         include: {
             artists: req.query.omitArtists === "true" ? false : true
@@ -48,7 +51,7 @@ router.get("/getAll", auth, async (req, res) => {
 });
 
 // add song to the database
-router.post("/add", auth, async (req, res: any) => {
+router.post("/add", auth, async (req: Request, res: Response) => {
     // create song
     let song = await prisma.song.create({
         data: {

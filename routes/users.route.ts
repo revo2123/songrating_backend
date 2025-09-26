@@ -1,21 +1,25 @@
 import { PrismaClient } from "@prisma/client";
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import bcrypt from "bcrypt";
 import auth from "../middleware/auth";
 import jwt from "jsonwebtoken";
+import { ExtendError } from "../middleware/error";
 
 const router = Router();
 const prisma = new PrismaClient();
 
 // get user by token
-router.get("/get/:id", auth, async (req, res: any) => {
+router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
     // get specific user by id
     const user = await prisma.user.findUnique({
         where: {
             id: +req.params.id
         }
     });
-    if (!user) return res.status(401).send("Access denied.");
+    if (!user) {
+        next(new ExtendError("Access denied!", 401));
+        return;
+    }
     // return found user
     res.send({
         id: user.id,
@@ -24,14 +28,16 @@ router.get("/get/:id", auth, async (req, res: any) => {
 });
 
 // add user with name and password
-router.post("/add", async (req, res: any) => {
+router.post("/add", async (req: Request, res: Response, next: NextFunction) => {
     // check if username is taken
     let user = await prisma.user.findUnique({
         where: {
             name: req.body.name
         }
     });
-    if (user) return res.status(401).send("Name taken.");
+    if (user) {
+        next(new ExtendError("Name taken!", 401));
+    }
     // create user, if it does not yet exist
     user = await prisma.user.create({
         data: {
@@ -48,7 +54,7 @@ router.post("/add", async (req, res: any) => {
 });
 
 // return jwt-token for name and password
-router.post("/login", async (req, res: any) => {
+router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
     // get user
     let user = await prisma.user.findUnique({
         where: {
@@ -58,7 +64,10 @@ router.post("/login", async (req, res: any) => {
     // check if user exists
     if (!user) return res.status(401).send("Access denied.");
     // check if password is correct
-    if (!(await bcrypt.compare(req.body.password, user.password))) return res.status(401).send("Access denied.");
+    if (!(await bcrypt.compare(req.body.password, user.password))) {
+        next(new ExtendError("Access denied!", 401));
+        return;
+    }
     // return auth-token and user
     res.header("Access-Control-Expose-Headers", "x-auth-token");
     res.header("x-auth-token", generateAuthToken(user)).send({
