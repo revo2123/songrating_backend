@@ -37,6 +37,7 @@ router.post("/add", async (req: Request, res: Response, next: NextFunction) => {
     });
     if (user) {
         next(new ExtendError("Name taken!", 401));
+        return;
     }
     // create user, if it does not yet exist
     user = await prisma.user.create({
@@ -61,11 +62,9 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
             name: req.body.name
         }
     });
-    // check if user exists
-    if (!user) return res.status(401).send("Access denied.");
-    // check if password is correct
-    if (!(await bcrypt.compare(req.body.password, user.password))) {
-        next(new ExtendError("Access denied!", 401));
+    // check if user exists and password is correct
+    if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
+        next(new ExtendError("Incorrect Password or Username!", 401));
         return;
     }
     // return auth-token and user
