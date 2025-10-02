@@ -2,71 +2,94 @@ import { PrismaClient } from "@prisma/client";
 import { NextFunction, Request, Response, Router } from "express";
 import auth from "../middleware/auth";
 import { ExtendError } from "../middleware/error";
+import { z } from "zod";
 
 const router = Router();
 const prisma = new PrismaClient();
 
+const querySchema = z.object({
+    size: z.string().optional(),
+    page: z.string().optional(),
+    omitSongs: z.string().optional()
+});
+
+const createArtistSchema = z.object({
+    name: z.string().min(1),
+    songs: z.array(z.object({id: z.number()})).optional()
+});
+
 // get specific artist by id
 router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
-    const artist = await prisma.artist.findUnique({
-        where: {
-            id: +req.params.id
-        },
-        include: {
-            songs: true
+    try {
+        const id = req.params.id;
+        if (!id || isNaN(+id)) {
+            next(new ExtendError("Invalid artist id!", 400));
+            return;
         }
-    });
-    if (!artist) {
-        next(new ExtendError("Artist not found!", 404));
-        return;
+        // find aritst by id
+        const artist = await prisma.artist.findUnique({
+            where: {
+                id: +id
+            },
+            include: {
+                songs: true
+            }
+        });
+        // error, if artist does not exist
+        if (!artist) {
+            next(new ExtendError("Artist not found!", 404));
+            return;
+        }
+        // return found artist
+        res.send(artist);
+    } catch(err) {
+        next(new ExtendError("Invalid artist id!", 400));
     }
-    // return found artist
-    res.send(artist);
 });
 
 // get all artists
-router.get("/getAll", auth, async (req: Request, res: Response) => {
-    const artists = await prisma.artist.findMany({
-        include: {
-            songs: req.query.omitSongs === "true" ? false : true
-        },
-        take: req.query.limit ? +req.query.limit : 24
-    });
-    // return found artists
-    res.send(artists);
+router.get("/getAll", auth, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const validated = querySchema.parse(req.query);
+        // set take
+        let take = 24;
+        if (validated.size && !isNaN(+validated.size)) {
+            take = +validated.size;
+        }
+        // set skip
+        let skip = 0;
+        if (validated.page && !isNaN(+validated.page)) {
+            skip = take * +validated.page;
+        }
+        // query artists
+        const artists = await prisma.artist.findMany({
+            include: {
+                songs: validated.omitSongs === "true" ? false : true
+            }, take, skip
+        });
+        // return found artists
+        res.send(artists);
+    } catch(err) {
+        next(new ExtendError("Invalid query parameters!", 400));
+    }
 });
 
 // add artists with name
-router.post("/add", auth, async (req: Request, res: Response) => {
-    // create artist, if it does not yet exist
-    let artist = await prisma.artist.create({
-        data: {
-            name: req.body.name,
-            songs: {
-                connect: req.body.songs ? req.body.songs : []
+router.post("/add", auth, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const validated = createArtistSchema.parse(req.body);
+        let artist = await prisma.artist.create({
+            data: {
+                name: validated.name,
+                songs: {
+                    connect: validated.songs ? validated.songs : []
+                }
             }
-        }
-    });
-    // return created artist
-    res.send(artist);
-});
-
-// update artist by id
-router.put("/update/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
-    const artist = await prisma.artist.update({
-        where: {
-            id: +req.params.id
-        },
-        data: {
-            name: req.body.name
-        }
-    });
-    if (!artist) {
-        next(new ExtendError("Artist not found!", 404));
-        return;
+        });
+        res.send(artist);
+    } catch(err) {
+        next(new ExtendError("Invalid request data!", 400));
     }
-    // return updated artist
-    res.send(artist);
 });
 
 export default router;
