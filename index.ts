@@ -39,5 +39,3 @@ app.use(error);
 app.listen(port, () => {
     console.log("Server at port: " + port);
 });
-
-// TODO: add error handling for everything...
