@@ -59,7 +59,7 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
         // set skip
         let skip = 0;
         if (validated.page && !isNaN(+validated.page)) {
-            skip = take * +validated.page;
+            skip = take * (+validated.page - 1);
         }
         // query artists
         const artists = await prisma.artist.findMany({
@@ -67,8 +67,11 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
                 songs: validated.omitSongs === "true" ? false : true
             }, take, skip
         });
+        // get total count of artists
+        const count = await prisma.artist.count();
+        const totalPages = Math.ceil(count / take);
         // return found artists
-        res.send(artists);
+        res.send({artists, totalPages});
     } catch(err) {
         next(new ExtendError("Invalid query parameters!", 400));
     }
