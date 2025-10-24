@@ -68,10 +68,10 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
             }, take, skip
         });
         // get total count of artists
-        const count = await prisma.artist.count();
-        const totalPages = Math.ceil(count / take);
+        const totalItems = await prisma.artist.count();
+        const totalPages = Math.ceil(totalItems / take);
         // return found artists
-        res.send({artists, totalPages});
+        res.send({artists, totalItems, totalPages});
     } catch(err) {
         next(new ExtendError("Invalid query parameters!", 400));
     }
