@@ -4,75 +4,100 @@ import bcrypt from "bcrypt";
 import auth from "../middleware/auth";
 import jwt from "jsonwebtoken";
 import { ExtendError } from "../middleware/error";
+import { z } from "zod";
 
 const router = Router();
 const prisma = new PrismaClient();
 
+const createSchema = z.object({
+    name: z.string().min(1).max(255),
+    password: z.string().min(1).max(255)
+});
+
 // get user by token
 router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunction) => {
-    // get specific user by id
-    const user = await prisma.user.findUnique({
-        where: {
-            id: +req.params.id
+    try {
+        const id = req.params.id;
+        if (!id || isNaN(+id)) {
+            next(new ExtendError("Invalid song id!", 400));
+            return;
         }
-    });
-    if (!user) {
-        next(new ExtendError("Access denied!", 401));
-        return;
+        // get specific user by id
+        const user = await prisma.user.findUnique({
+            where: {
+                id: +id
+            }
+        });
+        if (!user) {
+            next(new ExtendError("Access denied!", 401));
+            return;
+        }
+        // return found user
+        res.send({
+            id: user.id,
+            name: user.name
+        });
+    } catch(err) {
+        next(new ExtendError("Invalid user id!", 400));
     }
-    // return found user
-    res.send({
-        id: user.id,
-        name: user.name
-    })
 });
 
 // add user with name and password
 router.post("/add", async (req: Request, res: Response, next: NextFunction) => {
-    // check if username is taken
-    let user = await prisma.user.findUnique({
-        where: {
-            name: req.body.name
+    try {
+        const validated = createSchema.parse(req.body);
+        // check if username is taken
+        let user = await prisma.user.findUnique({
+            where: {
+                name: validated.name
+            }
+        });
+        if (user) {
+            next(new ExtendError("Name taken!", 401));
+            return;
         }
-    });
-    if (user) {
-        next(new ExtendError("Name taken!", 401));
-        return;
+        // create user, if it does not yet exist
+        user = await prisma.user.create({
+            data: {
+                name: validated.name,
+                password: await bcrypt.hash(validated.password, 10)
+            }
+        });
+        // return auth-token and user
+        res.header("Access-Control-Expose-Headers", "x-auth-token");
+        res.header("x-auth-token", generateAuthToken(user)).send({
+            id: user.id,
+            name: user.name
+        });
+    } catch(err) {
+        next(new ExtendError("Invalid request data!", 400));
     }
-    // create user, if it does not yet exist
-    user = await prisma.user.create({
-        data: {
-            name: req.body.name,
-            password: await bcrypt.hash(req.body.password, 10)
-        }
-    });
-    // return auth-token and user
-    res.header("Access-Control-Expose-Headers", "x-auth-token");
-    res.header("x-auth-token", generateAuthToken(user)).send({
-        id: user.id,
-        name: user.name
-    });
 });
 
 // return jwt-token for name and password
 router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
-    // get user
-    let user = await prisma.user.findUnique({
-        where: {
-            name: req.body.name
+    try {
+        const validated = createSchema.parse(req.body);
+        // get user
+        let user = await prisma.user.findUnique({
+            where: {
+                name: validated.name
+            }
+        });
+        // check if user exists and password is correct
+        if (!user || !(await bcrypt.compare(validated.password, user.password))) {
+            next(new ExtendError("Incorrect Password or Username!", 401));
+            return;
         }
-    });
-    // check if user exists and password is correct
-    if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
-        next(new ExtendError("Incorrect Password or Username!", 401));
-        return;
+        // return auth-token and user
+        res.header("Access-Control-Expose-Headers", "x-auth-token");
+        res.header("x-auth-token", generateAuthToken(user)).send({
+            id: user.id,
+            name: user.name
+        });
+    } catch(err) {
+        next(new ExtendError("Invalid request data!", 400));
     }
-    // return auth-token and user
-    res.header("Access-Control-Expose-Headers", "x-auth-token");
-    res.header("x-auth-token", generateAuthToken(user)).send({
-        id: user.id,
-        name: user.name
-    });
 });
 
 /**
