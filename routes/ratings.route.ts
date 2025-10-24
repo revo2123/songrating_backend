@@ -68,7 +68,7 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
         // set skip
         let skip = 0;
         if (validated.page && !isNaN(+validated.page)) {
-            skip = take * +validated.page;
+            skip = take * (+validated.page - 1);
         }
         // query ratings
         const ratings = await prisma.rating.findMany({
@@ -84,7 +84,11 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
             }, take, skip
         });
         // get total count of artists
-        const totalItems = await prisma.rating.count();
+        const totalItems = await prisma.rating.count({
+            where: {
+                userId: req.body.user.id
+            }
+        });
         const totalPages = Math.ceil(totalItems / take);
         // return found ratings
         res.send({ratings, totalItems, totalPages});
