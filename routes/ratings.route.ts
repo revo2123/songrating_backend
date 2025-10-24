@@ -62,8 +62,6 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
         const validated = querySchema.parse(req.query);
         // set take
         let take = 24;
-        console.log(req.query);
-        
         if (validated.size && !isNaN(+validated.size)) {
             take = +validated.size;
         }
