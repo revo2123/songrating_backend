@@ -1,145 +1,392 @@
-# Song Rating Backend
-The backend API for the Song Rating platform. Handles all data management, authentication, and business logic for rating and organizing music collections.
+# Song Rating Backend API
 
-## 🎵 About the Project
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)
+![Express](https://img.shields.io/badge/Express-4.21-lightgrey.svg)
+![Prisma](https://img.shields.io/badge/Prisma-6.1-2D3748.svg?logo=prisma)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12%2B-336791.svg?logo=postgresql)
 
-This Express.js application provides the REST API for the Song Rating platform. It manages artists, songs, ratings, and user data with a PostgreSQL database and Prisma ORM.
+A RESTful API backend for a multi-user song rating application built with Express.js, TypeScript, and PostgreSQL. Users can create accounts, add songs and artists, and rate songs on a scale of 1-10.
 
-### Features
+## 🎯 Features
 
-- ✅ Artist management (CRUD operations)
-- ✅ Song management with artist associations
-- ✅ User rating system
-- ✅ User authentication with JWT
-- ✅ RESTful API architecture
-- 🚧 More features in development
-
-## 🛠️ Tech Stack
-
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Language:** TypeScript
-- **Database:** PostgreSQL
-- **ORM:** Prisma
-- **Authentication:** JWT (JSON Web Tokens)
-- **Validation:** Zod
-- **Security:** bcrypt for password hashing
-- **Development:** nodemon, ts-node-dev
+- **User Authentication**: JWT-based authentication system
+- **Song Management**: Create and retrieve songs with associated artists
+- **Artist Management**: Manage artists and their associated songs
+- **Rating System**: Users can rate songs (1-10 scale) with unique constraint per user per song
+- **Pagination**: Built-in pagination support for list endpoints
+- **Input Validation**: Zod-based request validation
+- **Password Security**: Bcrypt hashing for secure password storage
+- **Type Safety**: Full TypeScript implementation with Prisma ORM
 
 ## 📋 Prerequisites
 
-- Node.js (version 18 or higher recommended)
-- npm or yarn
-- PostgreSQL database
+- **Node.js** (v18 or higher recommended)
+- **PostgreSQL** (v12 or higher)
+- **npm** or **yarn** package manager
 
-## 🚀 Installation
+## 🚀 Quick Start
 
-1. Clone the repository:
+### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/revo2123/songrating_backend.git
 cd songrating_backend
 ```
 
-2. Install dependencies:
+### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
-3. Set up environment variables:
-```bash
-cp .env.example .env
+### 3. Set Up PostgreSQL Database
+
+Create a PostgreSQL database and user:
+
+```sql
+CREATE DATABASE songrating_db;
+CREATE USER songrating_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE songrating_db TO songrating_user;
 ```
 
-Edit the `.env` file with your configuration. Required variables can be found in `.env.example`.
+### 4. Configure Environment Variables
 
-4. Set up the database:
+Create a `.env` file in the root directory:
+
+```env
+# Database
+DATABASE_URL="postgresql://songrating_user:your_password@localhost:5432/songrating_db?schema=public"
+
+# Server
+PORT=8000
+
+# JWT Configuration
+JWT_PRIVATE_KEY=your_super_secret_jwt_key_here_minimum_32_characters
+JWT_EXPIRY=14d
+```
+
+**Important**: 
+- Replace `your_super_secret_jwt_key_here_minimum_32_characters` with a strong, random secret key
+- The `JWT_PRIVATE_KEY` is required - the server will not start without it
+- Use a secure, randomly generated string for production environments
+
+### 5. Initialize Database Schema
+
 ```bash
-npx prisma migrate dev
+npx prisma db push
+```
+
+Or use migrations for production:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+### 6. Generate Prisma Client
+
+```bash
 npx prisma generate
 ```
 
-5. Start the development server:
+### 7. Start the Development Server
+
 ```bash
 npm run dev
 ```
 
-The API will be available at `http://localhost:8000` (or the port specified in your `.env` file).
+The server will start on `http://localhost:8000` (or the port specified in `.env`).
 
-## 📦 Build & Run
+## 📁 Project Structure
 
-### Development
-```bash
-npm run dev
 ```
-
-### Production Build
-```bash
-npm run build
-npm start
+songrating_backend/
+├── index.ts                 # Application entry point
+├── middleware/
+│   ├── auth.ts             # JWT authentication middleware
+│   └── error.ts            # Global error handler
+├── routes/
+│   ├── users.route.ts      # User authentication routes
+│   ├── songs.route.ts      # Song CRUD routes
+│   ├── artists.route.ts    # Artist CRUD routes
+│   └── ratings.route.ts    # Rating CRUD routes
+├── prisma/
+│   └── schema.prisma       # Database schema definition
+├── package.json
+├── tsconfig.json
+└── .env                    # Environment variables (create this)
 ```
 
 ## 🔌 API Endpoints
 
-The API provides the following main endpoints:
+All endpoints are prefixed with `/api`.
 
-- **`/artists`** - Artist management
-- **`/songs`** - Song management
-- **`/ratings`** - Rating operations
-- **`/users`** - User management and authentication
+### Authentication
 
-For detailed API documentation, see the endpoint implementations or set up API documentation tools.
+#### Register User
+```http
+POST /api/users/add
+Content-Type: application/json
 
-## 🏗️ Project Structure
-
-```
-songrating_backend/
-├── prisma/
-│   └── schema.prisma    # Database schema
-├── src/
-│   ├── routes/          # API route definitions
-│   ├── controllers/     # Request handlers
-│   ├── middleware/      # Custom middleware
-│   └── utils/           # Helper functions
-├── .env.example         # Environment variables template
-├── index.ts             # Application entry point
-└── package.json
+{
+  "name": "username",
+  "password": "password123"
+}
 ```
 
-## 🔐 Environment Variables
+**Response**: 
+- Headers: `x-auth-token` (JWT token)
+- Body: `{ "id": 1, "name": "username" }`
 
-Required environment variables (see `.env.example` for details):
+#### Login
+```http
+POST /api/users/login
+Content-Type: application/json
 
-- `PORT` - Server port (default: 8000)
-- `DATABASE_URL` - PostgreSQL connection string
-- `JWT_SECRET` - Secret key for JWT tokens
+{
+  "name": "username",
+  "password": "password123"
+}
+```
 
-## 🗄️ Database
+**Response**: 
+- Headers: `x-auth-token` (JWT token)
+- Body: `{ "id": 1, "name": "username" }`
 
-This application uses PostgreSQL with Prisma as the ORM. 
+#### Get User by ID
+```http
+GET /api/users/get/:id
+Headers: x-access-token: <JWT_TOKEN>
+```
 
-## 🔗 Frontend
+**Response**: `{ "id": 1, "name": "username" }`
 
-This backend works with the corresponding frontend application.  
-Frontend repository: https://github.com/revo2123/songrating_frontend
+### Songs
 
-## 🤝 Contributing
+#### Get All Songs
+```http
+GET /api/songs/getAll?size=24&page=0&omitArtists=false
+Headers: x-access-token: <JWT_TOKEN>
+```
 
-This project is still in early development. Contributions, issues, and feature requests are welcome!
+**Query Parameters**:
+- `size` (optional): Number of items per page (default: 24)
+- `page` (optional): Page number (default: 0)
+- `omitArtists` (optional): Set to `"true"` to exclude artists from response
 
-1. Fork the project
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+#### Get Song by ID
+```http
+GET /api/songs/get/:id
+Headers: x-access-token: <JWT_TOKEN>
+```
 
-## 📝 License
+**Response**: Includes song details, artists, average rating, and rating count.
 
-This project is currently without a license. Please contact for usage inquiries.
+#### Create Song
+```http
+POST /api/songs/add
+Headers: x-access-token: <JWT_TOKEN>
+Content-Type: application/json
 
-## 📌 Status
+{
+  "title": "Song Title",
+  "artists": [{ "id": 1 }]  // Optional
+}
+```
 
-⚠️ **In Development** - This project is under active development. Features and API may still change. Please inform me of feature wishes.
+### Artists
+
+#### Get All Artists
+```http
+GET /api/artists/getAll?size=24&page=1&omitSongs=false
+Headers: x-access-token: <JWT_TOKEN>
+```
+
+**Response**: 
+```json
+{
+  "artists": [...],
+  "totalPages": 5
+}
+```
+
+#### Get Artist by ID
+```http
+GET /api/artists/get/:id
+Headers: x-access-token: <JWT_TOKEN>
+```
+
+#### Create Artist
+```http
+POST /api/artists/add
+Headers: x-access-token: <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "name": "Artist Name",
+  "songs": [{ "id": 1 }]  // Optional
+}
+```
+
+### Ratings
+
+#### Get All Ratings (Current User)
+```http
+GET /api/ratings/getAll?size=24&page=0
+Headers: x-access-token: <JWT_TOKEN>
+```
+
+**Note**: Returns only ratings for the authenticated user.
+
+#### Get Rating by ID
+```http
+GET /api/ratings/get/:id
+Headers: x-access-token: <JWT_TOKEN>
+```
+
+#### Get Ratings by Song
+```http
+GET /api/ratings/getBySong/:songId
+Headers: x-access-token: <JWT_TOKEN>
+```
+
+**Response**: Array of rating values `[8, 9, 7, 10]`
+
+#### Create Rating
+```http
+POST /api/ratings/add
+Headers: x-access-token: <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "value": 8,  // 1-10
+  "songId": 1
+}
+```
+
+**Note**: Each user can only rate a song once (unique constraint). Updating a rating requires deleting and recreating it.
+
+## 🔒 Authentication
+
+The API uses JWT (JSON Web Tokens) for authentication. Include the token in the `x-access-token` header for protected routes:
+
+```http
+x-access-token: <your_jwt_token>
+```
+
+Tokens are returned in the `x-auth-token` header when registering or logging in.
+
+## 🛠️ Available Scripts
+
+```bash
+# Development mode with hot-reload (nodemon)
+npm run dev
+
+# Build TypeScript to JavaScript
+npm run build
+
+# Start production server
+npm start
+```
+
+## 🗄️ Database Schema
+
+### Models
+
+- **User**: `id`, `name` (unique), `password` (hashed), `rating[]`
+- **Song**: `id`, `title`, `artists[]`, `ratings[]`
+- **Artist**: `id`, `name`, `songs[]`
+- **Rating**: `id`, `value` (1-10), `songId`, `userId`, unique constraint on `(songId, userId)`
+
+### Database Management
+
+```bash
+# Push schema changes to database (development)
+npx prisma db push
+
+# Create migration (production)
+npx prisma migrate dev --name <migration_name>
+
+# View database in Prisma Studio
+npx prisma studio
+
+# Generate Prisma Client after schema changes
+npx prisma generate
+```
+
+## 🧪 Technologies Used
+
+- **Express.js** - Web framework
+- **TypeScript** - Type-safe JavaScript
+- **Prisma** - Modern ORM for database access
+- **PostgreSQL** - Relational database
+- **JWT** - Authentication tokens
+- **Bcrypt** - Password hashing
+- **Zod** - Schema validation
+- **CORS** - Cross-origin resource sharing
+
+## 🔧 Development
+
+### Type Checking
+
+```bash
+npx tsc --noEmit
+```
+
+### Prisma Studio
+
+Visual database browser:
+
+```bash
+npx prisma studio
+```
+
+Opens at `http://localhost:5555`
+
+## 🚨 Error Handling
+
+The API uses a centralized error handler. Errors are returned with appropriate HTTP status codes:
+
+- `400` - Bad Request (validation errors, invalid parameters)
+- `401` - Unauthorized (authentication required or failed)
+- `404` - Not Found (resource doesn't exist)
+- `500` - Internal Server Error
+
+Error response format:
+```json
+{
+  "message": "Error message here"
+}
+```
+
+## 📝 Notes
+
+- **Password Security**: Passwords are hashed using bcrypt with 10 salt rounds
+- **JWT Expiry**: Token expiration is configurable via `JWT_EXPIRY` environment variable
+- **CORS**: Currently allows all origins. Configure for production use.
+- **Rate Limiting**: Not currently implemented. Consider adding for production.
+
+## 🔐 Security Recommendations
+
+For production deployment:
+
+1. **Environment Variables**: Never commit `.env` files. Use secure secret management.
+2. **CORS**: Configure allowed origins instead of allowing all.
+3. **Rate Limiting**: Implement rate limiting on authentication endpoints.
+4. **HTTPS**: Always use HTTPS in production.
+5. **JWT Secret**: Use a strong, randomly generated secret key (minimum 32 characters).
+6. **Password Policy**: Consider implementing password strength requirements.
+7. **Input Validation**: Already implemented with Zod, but review for edge cases.
+
+## 📄 License
+
+MIT
+
+## 👤 Author
+
+pg
 
 ---
 
-⭐ If you like this project, give it a star on GitHub!
+For the frontend application, see the `songrating_frontend` repository.
