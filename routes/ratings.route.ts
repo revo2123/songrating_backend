@@ -62,15 +62,13 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
         const validated = querySchema.parse(req.query);
         // set take
         let take = 24;
-        console.log(req.query);
-        
         if (validated.size && !isNaN(+validated.size)) {
             take = +validated.size;
         }
         // set skip
         let skip = 0;
         if (validated.page && !isNaN(+validated.page)) {
-            skip = take * +validated.page;
+            skip = take * (+validated.page - 1);
         }
         // query ratings
         const ratings = await prisma.rating.findMany({
@@ -85,8 +83,15 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
                 songId: true
             }, take, skip
         });
+        // get total count of artists
+        const totalItems = await prisma.rating.count({
+            where: {
+                userId: req.body.user.id
+            }
+        });
+        const totalPages = Math.ceil(totalItems / take);
         // return found ratings
-        res.send(ratings);
+        res.send({ratings, totalItems, totalPages});
     } catch(err) {
         next(new ExtendError("Invalid query parameters!", 400));
     }

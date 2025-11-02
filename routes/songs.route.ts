@@ -10,6 +10,7 @@ const prisma = new PrismaClient();
 const querySchema = z.object({
     size: z.string().optional(),
     page: z.string().optional(),
+    noPag: z.string().optional(),
     omitArtists: z.string().optional()
 });
 
@@ -63,6 +64,8 @@ router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunct
 router.get("/getAll", auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validated = querySchema.parse(req.query);
+        console.log(validated.noPag ? "aaa" : "bbb");
+        
         // set take
         let take = 24;
         if (validated.size && !isNaN(+validated.size)) {
@@ -71,7 +74,7 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
         // set skip
         let skip = 0;
         if (validated.page && !isNaN(+validated.page)) {
-            skip = take * +validated.page;
+            skip = take * (+validated.page - 1);
         }
         // query songs
         const songs = await prisma.song.findMany({
@@ -79,8 +82,11 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
                 artists: req.query.omitArtists === "true" ? false : true
             }, take, skip
         });
+        // get total count of artists
+        const totalItems = await prisma.song.count();
+        const totalPages = Math.ceil(totalItems / take);
         // return found songs
-        res.send(songs);
+        res.send({songs, totalItems, totalPages});
     } catch(err) {
         next(new ExtendError("Invalid query parameters!", 400));
     }
@@ -105,7 +111,5 @@ router.post("/add", auth, async (req: Request, res: Response, next: NextFunction
         next(new ExtendError("Invalid request data!", 400));
     }
 });
-
-// TODO: add update functionality
 
 export default router;

@@ -47,7 +47,6 @@ router.post("/add", async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validated = createSchema.parse(req.body);
         // check if username is taken
-        // TODO: redo this, should probably work in one query
         let user = await prisma.user.findUnique({
             where: {
                 name: validated.name
