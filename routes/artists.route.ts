@@ -62,11 +62,20 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
             skip = take * (+validated.page - 1);
         }
         // query artists
-        const artists = await prisma.artist.findMany({
-            include: {
-                songs: validated.omitSongs === "true" ? false : true
-            }, take, skip
-        });
+        let artists = null
+        if (validated.size && !isNaN(+validated.size) && +validated.size == -1) {
+            artists = await prisma.artist.findMany({
+                include: {
+                    songs: validated.omitSongs === "true" ? false : true
+                }, skip
+            });
+        } else {
+            artists = await prisma.artist.findMany({
+                include: {
+                    songs: validated.omitSongs === "true" ? false : true
+                }, take, skip
+            });
+        }
         // get total count of artists
         const totalItems = await prisma.artist.count();
         const totalPages = Math.ceil(totalItems / take);

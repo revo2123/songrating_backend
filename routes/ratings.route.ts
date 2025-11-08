@@ -71,18 +71,34 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
             skip = take * (+validated.page - 1);
         }
         // query ratings
-        const ratings = await prisma.rating.findMany({
-            where: {
-                userId: req.body.user.id
-            },
-            include: {
-                song: true
-            },
-            omit: {
-                userId: true,
-                songId: true
-            }, take, skip
-        });
+        let ratings = null;
+        if (validated.size && !isNaN(+validated.size) && +validated.size == -1) {
+            ratings = await prisma.rating.findMany({
+                where: {
+                    userId: req.body.user.id
+                },
+                include: {
+                    song: true
+                },
+                omit: {
+                    userId: true,
+                    songId: true
+                }, skip
+            });
+        } else {
+            ratings = await prisma.rating.findMany({
+                where: {
+                    userId: req.body.user.id
+                },
+                include: {
+                    song: true
+                },
+                omit: {
+                    userId: true,
+                    songId: true
+                }, take, skip
+            });
+        }
         // get total count of artists
         const totalItems = await prisma.rating.count({
             where: {
