@@ -10,7 +10,6 @@ const prisma = new PrismaClient();
 const querySchema = z.object({
     size: z.string().optional(),
     page: z.string().optional(),
-    noPag: z.string().optional(),
     omitArtists: z.string().optional()
 });
 
@@ -64,8 +63,6 @@ router.get("/get/:id", auth, async (req: Request, res: Response, next: NextFunct
 router.get("/getAll", auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const validated = querySchema.parse(req.query);
-        console.log(validated.noPag ? "aaa" : "bbb");
-        
         // set take
         let take = 24;
         if (validated.size && !isNaN(+validated.size)) {
@@ -77,11 +74,20 @@ router.get("/getAll", auth, async (req: Request, res: Response, next: NextFuncti
             skip = take * (+validated.page - 1);
         }
         // query songs
-        const songs = await prisma.song.findMany({
-            include: {
-                artists: req.query.omitArtists === "true" ? false : true
-            }, take, skip
-        });
+        let songs = null;
+        if (validated.size && !isNaN(+validated.size) && +validated.size == -1) {
+            songs = await prisma.song.findMany({
+                include: {
+                    artists: req.query.omitArtists === "true" ? false : true
+                }, skip
+            });
+        } else {
+            songs = await prisma.song.findMany({
+                include: {
+                    artists: req.query.omitArtists === "true" ? false : true
+                }, take, skip
+            });
+        }
         // get total count of artists
         const totalItems = await prisma.song.count();
         const totalPages = Math.ceil(totalItems / take);
